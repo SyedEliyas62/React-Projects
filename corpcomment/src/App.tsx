@@ -1,16 +1,37 @@
-import { useEffect, useState } from "react";
-import Container from "./components/Container";
-import Footer from "./components/Footer";
-import HashtagList from "./components/HashtagList";
+import { useEffect, useMemo, useState } from "react";
+import Container from "./components/layout/Container";
+import Footer from "./components/layout/Footer";
+import HashtagList from "./components/hashtag/HashtagList";
 import { TFeedbackItem } from "./lib/types";
 
 function App() {
   const [feedbackItems, setFeedbackItems] = useState<TFeedbackItem>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("");
 
-  const handleAddToList = (text: string) => {
-    const companyName = text
+  const filteredFeedbackItems = useMemo(
+    () =>
+      selectedCompany
+        ? feedbackItems.filter(
+            (feedbackItem) => feedbackItem.company === selectedCompany
+          )
+        : feedbackItems,
+    [feedbackItems, selectedCompany]
+  );
+
+  const comanyList = useMemo(
+    () =>
+      feedbackItems
+        .map((item) => item.company)
+        .filter((company, index, array) => {
+          return array.indexOf(company) === index;
+        }),
+    [feedbackItems]
+  );
+
+  const handleAddToList = async (text: string) => {
+    const company = text
       .split(" ")
       .find((word) => word.includes("#"))
       .substring(1);
@@ -20,11 +41,27 @@ function App() {
       text: text,
       upvoteCount: 0,
       daysAgo: 0,
-      companyName: companyName,
-      badgeLetter: companyName.substring(0, 1).toUpperCase(),
+      company: company,
+      badgeLetter: company.substring(0, 1).toUpperCase(),
     };
 
     setFeedbackItems([...feedbackItems, newItem]);
+
+    await fetch(
+      "https://bytegrad.com/course-assets/projects/corpcomment/api/feedbacks",
+      {
+        method: "POST",
+        body: JSON.stringify(newItem),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  };
+
+  const handleSelectCompany = (company: string) => {
+    setSelectedCompany(company);
   };
 
   useEffect(() => {
@@ -53,11 +90,14 @@ function App() {
       <Footer />
       <Container
         errorMessage={errorMessage}
-        feedbackItems={feedbackItems}
+        feedbackItems={filteredFeedbackItems}
         isLoading={isLoading}
         handleAddToList={handleAddToList}
       />
-      <HashtagList />
+      <HashtagList
+        companyList={comanyList}
+        handleSelectCompany={handleSelectCompany}
+      />
     </div>
   );
 }

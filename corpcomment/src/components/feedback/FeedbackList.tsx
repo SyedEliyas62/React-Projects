@@ -1,6 +1,6 @@
 import FeedbackItem from "./FeedbackItem";
-import Spinner from "./Spinner";
-import ErrorMessage from "./ErrorMessage";
+import Spinner from "../Spinner";
+import ErrorMessage from "../ErrorMessage";
 
 
 
